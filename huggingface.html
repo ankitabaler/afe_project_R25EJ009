@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hugging Face Model Card: DeepSeek-R1</title>
+    <meta name="description" content="In-depth analysis and technical documentation of deepseek-ai/DeepSeek-R1 model training, architecture, benchmarks, and licensing.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --hf-yellow: #FFD21E;
+            --hf-yellow-glow: rgba(255, 210, 30, 0.15);
+            --hf-yellow-border: rgba(255, 210, 30, 0.3);
+            --bg-dark: #0b0f19;
+            --bg-card: rgba(18, 24, 38, 0.7);
+            --bg-card-hover: rgba(28, 36, 56, 0.85);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-heading: 'Outfit', sans-serif;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(255, 210, 30, 0.05) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Style */
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .hf-logo-badge {
+            background: linear-gradient(135deg, var(--hf-yellow), #f59e0b);
+            color: #000;
+            font-weight: 800;
+            font-family: var(--font-heading);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 20px var(--hf-yellow-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hf-logo-badge svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        h1 {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #ffffff, #f3f4f6, var(--hf-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.15rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 3D Glassmorphism Grid */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2rem;
+            perspective: 1000px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 2.25rem;
+            backdrop-filter: blur(16px) saturate(120%);
+            -webkit-backdrop-filter: blur(16px) saturate(120%);
+            transition: var(--transition);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 210, 30, 0.08) 0%, transparent 100%);
+            opacity: 0;
+            transition: var(--transition);
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-8px) rotateX(2deg) rotateY(-1deg);
+            border-color: var(--hf-yellow-border);
+            box-shadow: 0 20px 40px rgba(255, 210, 30, 0.06), 0 1px 1px var(--hf-yellow-border) inset;
+            background: var(--bg-card-hover);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        /* Card Sizes */
+        .card-large {
+            grid-column: span 8;
+        }
+
+        .card-medium {
+            grid-column: span 6;
+        }
+
+        .card-small {
+            grid-column: span 4;
+        }
+
+        .card-full {
+            grid-column: span 12;
+        }
+
+        /* Card Contents */
+        .card-icon {
+            background: rgba(255, 210, 30, 0.08);
+            border: 1px solid var(--hf-yellow-border);
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--hf-yellow);
+            box-shadow: 0 4px 15px rgba(255, 210, 30, 0.05);
+            transition: var(--transition);
+        }
+
+        .card:hover .card-icon {
+            transform: scale(1.1) rotate(5deg);
+            background: var(--hf-yellow);
+            color: #000;
+        }
+
+        .card-title {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Meta Data Styling */
+        .metadata-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .metadata-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding-bottom: 0.75rem;
+        }
+
+        .metadata-item:last-child {
+            border: none;
+            padding-bottom: 0;
+        }
+
+        .metadata-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .metadata-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: right;
+        }
+
+        .badge {
+            background: rgba(255, 210, 30, 0.1);
+            color: var(--hf-yellow);
+            border: 1px solid var(--hf-yellow-border);
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Parameters Visual Grid */
+        .param-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: auto;
+        }
+
+        .param-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.25rem;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .card:hover .param-box {
+            border-color: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .param-value {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--hf-yellow);
+            margin-bottom: 0.25rem;
+        }
+
+        .param-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Benchmark Bars */
+        .benchmark-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .benchmark-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .benchmark-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .benchmark-bar-bg {
+            background: rgba(255, 255, 255, 0.05);
+            height: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .benchmark-bar-fill {
+            background: linear-gradient(90deg, var(--hf-yellow), #eab308);
+            height: 100%;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 1.5s cubic-bezier(0.1, 1, 0.1, 1);
+            position: relative;
+        }
+
+        .benchmark-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0) 100-percent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        /* Use Cases / Limitations List */
+        .check-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .check-item svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .item-success svg {
+            fill: var(--accent-green);
+        }
+
+        .item-warning svg {
+            fill: #f59e0b;
+        }
+
+        /* Footer Links */
+        .footer-action {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 4rem;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            font-family: var(--font-heading);
+            font-weight: 600;
+            padding: 0.8rem 1.8rem;
+            border-radius: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #ffffff;
+            color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-primary {
+            background: var(--hf-yellow);
+            color: #000000;
+            border: 1px solid var(--hf-yellow);
+        }
+
+        .btn-primary:hover {
+            background: #e6bd19;
+            box-shadow: 0 10px 25px var(--hf-yellow-glow);
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shimmer {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 1024px) {
+            .card-large {
+                grid-column: span 12;
+            }
+            .card-medium {
+                grid-column: span 6;
+            }
+            .card-small {
+                grid-column: span 6;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.25rem;
+            }
+            .card-medium, .card-small {
+                grid-column: span 12;
+            }
+            .param-grid {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 1.5rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="hf-logo-badge">
+                <!-- Hugging Face Emoji/Logo SVG -->
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="48" fill="#FFD21E"/>
+                    <path d="M50,22 C42,22 36,30 36,38 C36,46 42,50 42,50 C42,50 36,54 36,66 C36,78 46,78 50,78 C54,78 64,78 64,66 C64,54 58,50 58,50 C58,50 64,46 64,38 C64,30 58,22 50,22 Z" fill="#000000"/>
+                    <circle cx="43" cy="38" r="3" fill="#FFD21E"/>
+                    <circle cx="57" cy="38" r="3" fill="#FFD21E"/>
+                    <path d="M46,44 Q50,47 54,44" stroke="#FFD21E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                </svg>
+                Trending Model Card
+            </div>
+            <h1>deepseek-ai/DeepSeek-R1</h1>
+            <p class="subtitle">A state-of-the-art Mixture-of-Experts (MoE) reasoning model developed by DeepSeek, optimized using large-scale Reinforcement Learning.</p>
+        </header>
+
+        <main class="grid-layout">
+            <!-- Card 1: Core Details (Large) -->
+            <div class="card card-large">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <h2 class="card-title">Model Specifications</h2>
+                <p class="card-desc">Comprehensive system overview, developer taxonomy, and licensing classification for DeepSeek-R1.</p>
+                
+                <ul class="metadata-list">
+                    <li class="metadata-item">
+                        <span class="metadata-label">Organization / Creator</span>
+                        <span class="metadata-value">DeepSeek (deepseek-ai)</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Model Type</span>
+                        <span class="metadata-value">Mixture-of-Experts (MoE) LLM</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Release Date</span>
+                        <span class="metadata-value">January 20, 2025</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">License Type</span>
+                        <span class="metadata-value"><span class="badge">MIT License (Permissive)</span></span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Repository Host</span>
+                        <span class="metadata-value">Hugging Face Model Hub</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Card 2: Parameters (Small) -->
+            <div class="card card-small">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                </div>
+                <h2 class="card-title">Model Size</h2>
+                <p class="card-desc">Parameter counts specifying total size vs computation footprint per forward pass.</p>
+                
+                <div class="param-grid">
+                    <div class="param-box">
+                        <div class="param-value">671B</div>
+                        <div class="param-label">Total Parameters</div>
+                    </div>
+                    <div class="param-box">
+                        <div class="param-value">37B</div>
+                        <div class="param-label">Active / Token</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Training Parameters & Hardware (Medium) -->
+            <div class="card card-medium">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                </div>
+                <h2 class="card-title">Training Configuration</h2>
+                <p class="card-desc">Details of hardware cluster, numerical formats, and optimization techniques utilized during model training.</p>
+                
+                <ul class="metadata-list">
+                    <li class="metadata-item">
+                        <span class="metadata-label">Optimization Method</span>
+                        <span class="metadata-value">GRPO (Group Relative Policy Optimization)</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Hardware Cluster</span>
+                        <span class="metadata-value">2,048 NVIDIA H800 GPUs</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Node Configuration</span>
+                        <span class="metadata-value">8x H800 per node</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Precision Format</span>
+                        <span class="metadata-value">FP8 Mixed Precision</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Learning Rate Range</span>
+                        <span class="metadata-value">~1e-5 (fine-tuning)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Card 4: Dataset Used (Medium) -->
+            <div class="card card-medium">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h2 class="card-title">Dataset & RL Signals</h2>
+                <p class="card-desc">Training pipelines leveraging multi-stage alignment data and rule-based feedback loops.</p>
+                
+                <ul class="metadata-list">
+                    <li class="metadata-item">
+                        <span class="metadata-label">Cold-Start Data</span>
+                        <span class="metadata-value">Reasoning-oriented human SFT examples</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Reinforcement Learning</span>
+                        <span class="metadata-value">Rule-based rewards (Math, Coding accuracy)</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">Language Mixing Mitigation</span>
+                        <span class="metadata-value">Targeted RL reward penalties</span>
+                    </li>
+                    <li class="metadata-item">
+                        <span class="metadata-label">CoT Support</span>
+                        <span class="metadata-value">Self-discovered Chain-of-Thought (RL-Zero)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Card 5: Evaluation Benchmarks (Large) -->
+            <div class="card card-large">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </div>
+                <h2 class="card-title">Evaluation Benchmarks</h2>
+                <p class="card-desc">Key performance benchmarks demonstrating mathematical and reasoning capabilities compared to state-of-the-art models.</p>
+                
+                <div class="benchmark-wrapper">
+                    <div class="benchmark-row">
+                        <div class="benchmark-info">
+                            <span>AIME 2024 (Math Reasoning)</span>
+                            <span>79.8%</span>
+                        </div>
+                        <div class="benchmark-bar-bg">
+                            <div class="benchmark-bar-fill" data-width="79.8%"></div>
+                        </div>
+                    </div>
+
+                    <div class="benchmark-row">
+                        <div class="benchmark-info">
+                            <span>MATH-500 (Advanced Math)</span>
+                            <span>97.3%</span>
+                        </div>
+                        <div class="benchmark-bar-bg">
+                            <div class="benchmark-bar-fill" data-width="97.3%"></div>
+                        </div>
+                    </div>
+
+                    <div class="benchmark-row">
+                        <div class="benchmark-info">
+                            <span>HumanEval (Code Generation)</span>
+                            <span>92.6%</span>
+                        </div>
+                        <div class="benchmark-bar-bg">
+                            <div class="benchmark-bar-fill" data-width="92.6%"></div>
+                        </div>
+                    </div>
+
+                    <div class="benchmark-row">
+                        <div class="benchmark-info">
+                            <span>GPQA Diamond (Graduate-Level Science)</span>
+                            <span>59.1%</span>
+                        </div>
+                        <div class="benchmark-bar-bg">
+                            <div class="benchmark-bar-fill" data-width="59.1%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 6: Intended Use Cases (Small) -->
+            <div class="card card-small">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h2 class="card-title">Intended Use Cases</h2>
+                <p class="card-desc">High-value reasoning tasks ideally suited for DeepSeek-R1's capabilities.</p>
+                
+                <ul class="check-list">
+                    <li class="check-item item-success">
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#10b981" opacity="0.2"/><path d="M14 7l-5 5-2-2" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                        <span>Multi-step Math Problem Solving</span>
+                    </li>
+                    <li class="check-item item-success">
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#10b981" opacity="0.2"/><path d="M14 7l-5 5-2-2" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                        <span>Complex Code Refactoring & Debugging</span>
+                    </li>
+                    <li class="check-item item-success">
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#10b981" opacity="0.2"/><path d="M14 7l-5 5-2-2" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                        <span>Logical Inference & Scientific Analysis</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Card 7: Limitations (Full Width) -->
+            <div class="card card-full">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <h2 class="card-title">Limitations & Hardware Constraints</h2>
+                <p class="card-desc">Known system boundaries and structural limitations to consider before deployment.</p>
+                
+                <ul class="check-list">
+                    <li class="check-item item-warning">
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#f59e0b" opacity="0.2"/><path d="M10 7v4M10 14h.01" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                        <span><strong>Language Mixing:</strong> The model can occasionally switch languages mid-sentence during reasoning.</span>
+                    </li>
+                    <li class="check-item item-warning">
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#f59e0b" opacity="0.2"/><path d="M10 7v4M10 14h.01" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                        <span><strong>Inference Compute:</strong> Hosting the full 671B model requires substantial GPU arrays (multiple A100/H100 nodes).</span>
+                    </li>
+                    <li class="check-item item-warning">
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#f59e0b" opacity="0.2"/><path d="M10 7v4M10 14h.01" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                        <span><strong>Formatting Repetitions:</strong> Can become verbose or repeat chain-of-thought blocks under edge prompts.</span>
+                    </li>
+                </ul>
+            </div>
+        </main>
+
+        <div class="footer-action">
+            <a href="https://huggingface.co/deepseek-ai/DeepSeek-R1" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                View on Hugging Face
+            </a>
+            <a href="index.html" class="btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Projects Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Animates benchmark bars on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const fillBars = document.querySelectorAll('.benchmark-bar-fill');
+                fillBars.forEach(bar => {
+                    const targetWidth = bar.getAttribute('data-width');
+                    bar.style.width = targetWidth;
+                });
+            }, 300);
+        });
+    </script>
+</body>
+</html>

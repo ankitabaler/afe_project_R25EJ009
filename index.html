@@ -3,9 +3,484 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AFE Projects by Ankita Baler</title>
+    <title>AFE Coursework | 3D Parallax Dashboard</title>
+    <meta name="description" content="Master 3D glassmorphic navigation dashboard for Ankita Baler's AFE coursework projects.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(10, 15, 30, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-glow: rgba(0, 242, 254, 0.25);
+            --text-primary: #ffffff;
+            --text-secondary: #cbd5e1;
+            --color-cyan: #00f2fe;
+            --color-violet: #8a2be2;
+            --color-amber: #f59e0b;
+            --font-heading: 'Outfit', sans-serif;
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #030712;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* 3D Parallax Scenic Background Layers */
+        .parallax-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Layer 1: Stars / Sky */
+        .bg-layer-sky {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #030712 80%);
+            transform: translate3d(var(--tx-sky, 0px), var(--ty-sky, 0px), 0);
+            transition: transform 0.2s ease-out;
+        }
+
+        /* Ambient glow spots */
+        .glow-spot-1 {
+            position: absolute;
+            top: 20%;
+            left: 30%;
+            width: 40vw;
+            height: 40vw;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.15) 0%, transparent 70%);
+            filter: blur(50px);
+        }
+
+        .glow-spot-2 {
+            position: absolute;
+            top: 50%;
+            left: 60%;
+            width: 35vw;
+            height: 35vw;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.15) 0%, transparent 70%);
+            filter: blur(50px);
+        }
+
+        /* Layer 2: Main Mountain View */
+        .bg-layer-mountains {
+            position: absolute;
+            bottom: -5%;
+            left: -5%;
+            width: 110%;
+            height: 90%;
+            background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=1920');
+            background-size: cover;
+            background-position: bottom center;
+            opacity: 0.35;
+            mix-blend-mode: lighten;
+            transform: translate3d(var(--tx-mountains, 0px), var(--ty-mountains, 0px), 0);
+            transition: transform 0.15s ease-out;
+        }
+
+        /* Layer 3: Foreground Cave Frame (Visual framing from the uploaded screenshot) */
+        .bg-layer-cave-frame {
+            position: absolute;
+            top: -5%;
+            left: -5%;
+            width: 110%;
+            height: 110%;
+            /* Emulate the rock-like vignette/cave opening from the user image using a dark radial gradient + SVG mask */
+            background: radial-gradient(
+                ellipse at 50% 50%,
+                transparent 30%,
+                rgba(3, 7, 18, 0.7) 60%,
+                rgba(3, 7, 18, 0.95) 90%
+            );
+            z-index: 3;
+            transform: translate3d(var(--tx-cave, 0px), var(--ty-cave, 0px), 0);
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Master Dashboard Dashboard Container */
+        .dashboard-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1200px;
+            padding: 3rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            perspective: 1200px; /* Crucial for 3D card tilt perspective */
+        }
+
+        /* Header design */
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            transform-style: preserve-3d;
+            transform: translateZ(30px);
+        }
+
+        .dashboard-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--color-cyan);
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 242, 254, 0.1);
+        }
+
+        h1 {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 40%, var(--color-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .lead-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Interactive 3D Grid */
+        .grid-3d {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2.5rem;
+            width: 100%;
+            transform-style: preserve-3d;
+        }
+
+        /* Premium Glassmorphism Cards */
+        .card-3d-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease;
+        }
+
+        .glass-card-3d {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 3rem 2.5rem;
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.4),
+                0 1px 0 rgba(255,255,255,0.1) inset,
+                0 -1px 0 rgba(0,0,0,0.5) inset;
+            transition: var(--transition);
+            transform-style: preserve-3d;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Card background grid glow */
+        .glass-card-3d::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.08) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .card-3d-link:hover .glass-card-3d::after {
+            opacity: 1;
+        }
+
+        .card-3d-link:hover .glass-card-3d {
+            border-color: rgba(0, 242, 254, 0.35);
+            box-shadow: 
+                0 40px 80px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(0, 242, 254, 0.15),
+                0 1px 0 rgba(255,255,255,0.2) inset;
+            background: rgba(10, 15, 30, 0.6);
+        }
+
+        /* 3D Push Out elements on Hover */
+        .project-tag {
+            font-family: var(--font-heading);
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            transform: translateZ(20px);
+            transition: var(--transition);
+        }
+
+        .tag-cyan { color: var(--color-cyan); }
+        .tag-violet { color: var(--color-violet); }
+        .tag-amber { color: var(--color-amber); }
+        .tag-white { color: #ffffff; }
+
+        .card-title {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            transform: translateZ(40px);
+            transition: var(--transition);
+            color: #ffffff;
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            transform: translateZ(30px);
+            transition: var(--transition);
+            flex-grow: 1;
+        }
+
+        .card-action {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 0.95rem;
+            transform: translateZ(25px);
+            transition: var(--transition);
+        }
+
+        .arrow-icon {
+            width: 20px;
+            height: 20px;
+            transition: var(--transition);
+        }
+
+        .card-3d-link:hover .arrow-icon {
+            transform: translateX(6px);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transform: translateZ(10px);
+            opacity: 0.8;
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 968px) {
+            .grid-3d {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            h1 {
+                font-size: 2.8rem;
+            }
+            .glass-card-3d {
+                padding: 2.5rem 2rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            .dashboard-wrapper {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>AFE Projects by Ankita Baler</h1>
+
+    <!-- 3D Scenic Parallax Layers -->
+    <div class="parallax-container">
+        <div class="bg-layer-sky" id="layer-sky">
+            <div class="glow-spot-1"></div>
+            <div class="glow-spot-2"></div>
+        </div>
+        <div class="bg-layer-mountains" id="layer-mountains"></div>
+        <div class="bg-layer-cave-frame" id="layer-cave"></div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-wrapper">
+        <header>
+            <div class="dashboard-badge">Coursework Dashboard</div>
+            <h1>AFE Coursework Portal</h1>
+            <p class="lead-text">Experience a showcase of responsive design, dynamic layout systems, real-time integration pipelines, and structured analytics by Ankita Baler.</p>
+        </header>
+
+        <main class="grid-3d">
+            <!-- Project 1 (Represented as Portfolio Hub) -->
+            <a href="portfolio.html" class="card-3d-link">
+                <div class="glass-card-3d">
+                    <span class="project-tag tag-violet">Project Portfolio</span>
+                    <h2 class="card-title">Personal Portfolio Hub</h2>
+                    <p class="card-desc">A premium responsive portfolio featuring sleek gradients, smooth custom scrollbars, and typing animations linking to all coursework modules.</p>
+                    <div class="card-action" style="color: var(--color-violet);">
+                        Explore Portfolio
+                        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Project 2 (Hugging Face Model Card) -->
+            <a href="huggingface.html" class="card-3d-link">
+                <div class="glass-card-3d">
+                    <span class="project-tag tag-amber">Model Card</span>
+                    <h2 class="card-title">Hugging Face Research</h2>
+                    <p class="card-desc">Deep-dive technical documentation of the trending DeepSeek-R1 model card. Features visual training metrics and parameter statistics.</p>
+                    <div class="card-action" style="color: var(--color-amber);">
+                        Analyze Model Cards
+                        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Project 3 (Live News Portal) -->
+            <a href="news.html" class="card-3d-link">
+                <div class="glass-card-3d">
+                    <span class="project-tag tag-cyan">API Integration</span>
+                    <h2 class="card-title">Live News Aggregator</h2>
+                    <p class="card-desc">A high-fidelity news platform fetching live headlines from NewsAPI, featuring category filtering, keyword searches, skeleton loading cards, and theme toggling.</p>
+                    <div class="card-action" style="color: var(--color-cyan);">
+                        Read Live Headlines
+                        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Project 4 (Source Repository) -->
+            <a href="https://github.com/ankitabaler/afe_project_R25EJ009" target="_blank" rel="noopener noreferrer" class="card-3d-link">
+                <div class="glass-card-3d">
+                    <span class="project-tag tag-white">Version Control</span>
+                    <h2 class="card-title">Source Repository</h2>
+                    <p class="card-desc">Review clean, structured directories, git commit logs, and deployment workflows directly on the GitHub source code repository.</p>
+                    <div class="card-action" style="color: #ffffff;">
+                        View GitHub Code
+                        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                </div>
+            </a>
+        </main>
+
+        <footer>
+            <p>Designed and Built by Ankita Baler &copy; 2026. Powered by GitHub Pages.</p>
+        </footer>
+    </div>
+
+    <script>
+        const body = document.body;
+        const layerSky = document.getElementById('layer-sky');
+        const layerMountains = document.getElementById('layer-mountains');
+        const layerCave = document.getElementById('layer-cave');
+        const cards = document.querySelectorAll('.glass-card-3d');
+
+        // Interactive mouse movement for 3D parallax layers & card shine
+        window.addEventListener('mousemove', (e) => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            // Normalize cursor position (-0.5 to 0.5)
+            const px = (e.clientX / width) - 0.5;
+            const py = (e.clientY / height) - 0.5;
+
+            // Parallax layers translation offsets
+            const txSky = px * -25;
+            const tySky = py * -25;
+            
+            const txMountains = px * -12;
+            const tyMountains = py * -12;
+            
+            const txCave = px * 8;
+            const tyCave = py * 8;
+
+            // Apply style transformations
+            layerSky.style.setProperty('--tx-sky', `${txSky}px`);
+            layerSky.style.setProperty('--ty-sky', `${tySky}px`);
+
+            layerMountains.style.setProperty('--tx-mountains', `${txMountains}px`);
+            layerMountains.style.setProperty('--ty-mountains', `${tyMountains}px`);
+
+            layerCave.style.setProperty('--tx-cave', `${txCave}px`);
+            layerCave.style.setProperty('--ty-cave', `${tyCave}px`);
+        });
+
+        // 3D Card tilting logic
+        const cardContainers = document.querySelectorAll('.card-3d-link');
+        
+        cardContainers.forEach(container => {
+            const card = container.querySelector('.glass-card-3d');
+
+            container.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                
+                // Get mouse position relative to card coordinates
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Set CSS variables for radial gradient shine effect
+                card.style.setProperty('--mx', `${x}px`);
+                card.style.setProperty('--my', `${y}px`);
+
+                // Normalize inputs to ranges [-10, 10] degrees
+                const rotateX = -12 * ((y - rect.height / 2) / (rect.height / 2));
+                const rotateY = 12 * ((x - rect.width / 2) / (rect.width / 2));
+
+                container.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
+            });
+
+            container.addEventListener('mouseleave', () => {
+                container.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+            });
+        });
+    </script>
 </body>
 </html>

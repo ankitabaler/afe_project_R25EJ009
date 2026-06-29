@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AFE Chronicle | Live News Hub</title>
+    <meta name="description" content="A live news aggregator featuring breaking news ticker, custom searches, and category filters. Powered by NewsAPI.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Light theme colors (Newspaper style) */
+            --bg-body: #fbfbf9;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            --text-title: #0f172a;
+            --text-body: #334155;
+            --accent-red: #c21a09;
+            --accent-red-hover: #9c1507;
+            --ticker-bg: #1e293b;
+            --ticker-text: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-serif: 'Playfair Display', serif;
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        [data-theme="dark"] {
+            /* Dark theme colors */
+            --bg-body: #0b0f19;
+            --bg-card: #151f32;
+            --border-color: #233554;
+            --text-title: #f1f5f9;
+            --text-body: #94a3b8;
+            --accent-red: #ef4444;
+            --accent-red-hover: #f87171;
+            --ticker-bg: #ef4444;
+            --ticker-text: #ffffff;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-body);
+            font-family: var(--font-sans);
+            transition: var(--transition);
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* News Ticker */
+        .ticker-wrap {
+            background-color: var(--ticker-bg);
+            color: var(--ticker-text);
+            padding: 0.6rem 0;
+            overflow: hidden;
+            position: relative;
+            z-index: 100;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker-title {
+            background: var(--accent-red);
+            color: #ffffff;
+            padding: 0.3rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: absolute;
+            left: 0;
+            z-index: 2;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+            font-family: var(--font-sans);
+        }
+
+        .ticker {
+            display: inline-flex;
+            white-space: nowrap;
+            padding-left: 10%;
+            animation: marquee 25s linear infinite;
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .ticker-item::after {
+            content: "•";
+            margin-left: 2rem;
+            color: var(--accent-red);
+            font-size: 1.2rem;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header Style */
+        header {
+            border-bottom: 4px double var(--text-title);
+            padding: 2rem 0 1.5rem 0;
+            margin-bottom: 2rem;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .date-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-title);
+        }
+
+        .theme-toggle-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-title);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .theme-toggle-btn:hover {
+            background-color: var(--border-color);
+        }
+
+        h1.site-title {
+            font-family: var(--font-serif);
+            font-size: 3.8rem;
+            font-weight: 900;
+            color: var(--text-title);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1.5px;
+        }
+
+        .tagline {
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 1.15rem;
+            color: var(--text-body);
+            margin-bottom: 1rem;
+        }
+
+        /* API Key Banner */
+        .api-banner {
+            background-color: rgba(194, 26, 9, 0.05);
+            border: 1px dashed var(--accent-red);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .api-banner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .api-banner-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent-red);
+        }
+
+        .api-banner-desc {
+            font-size: 0.85rem;
+            color: var(--text-body);
+        }
+
+        .api-form {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .api-input {
+            flex-grow: 1;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-title);
+            font-size: 0.9rem;
+        }
+
+        .api-btn {
+            background-color: var(--accent-red);
+            color: #ffffff;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .api-btn:hover {
+            background-color: var(--accent-red-hover);
+        }
+
+        /* Toolbar (Filters & Search) */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-body);
+            padding: 0.6rem 1.2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font-sans);
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background-color: var(--accent-red);
+            border-color: var(--accent-red);
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(194, 26, 9, 0.2);
+        }
+
+        .search-box {
+            position: relative;
+            min-width: 280px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            background: var(--bg-card);
+            color: var(--text-title);
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 10px rgba(194, 26, 9, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-body);
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+        }
+
+        /* News Cards Grid */
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .news-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+            border-color: rgba(194, 26, 9, 0.2);
+        }
+
+        .card-image-wrap {
+            height: 200px;
+            overflow: hidden;
+            background: #eee;
+            position: relative;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .news-card:hover .card-image {
+            transform: scale(1.05);
+        }
+
+        .card-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-body);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-source {
+            color: var(--accent-red);
+        }
+
+        .card-title {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--text-title);
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-body);
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .read-more-btn {
+            background-color: var(--bg-body);
+            border: 1px solid var(--border-color);
+            color: var(--text-title);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: auto;
+        }
+
+        .read-more-btn:hover {
+            background-color: var(--accent-red);
+            border-color: var(--accent-red);
+            color: #ffffff;
+        }
+
+        /* Skeleton Loading Cards */
+        .skeleton {
+            background: linear-gradient(90deg, var(--border-color) 25%, var(--bg-body) 50%, var(--border-color) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        .skeleton-image {
+            height: 200px;
+            width: 100%;
+        }
+
+        .skeleton-meta {
+            height: 15px;
+            width: 50%;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        .skeleton-title {
+            height: 25px;
+            width: 90%;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        .skeleton-desc {
+            height: 60px;
+            width: 100%;
+            border-radius: 4px;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--ticker-bg);
+            color: var(--ticker-text);
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 4px double var(--border-color);
+            padding: 2rem 0;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-body);
+            background: var(--bg-card);
+        }
+
+        /* Animations */
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            h1.site-title { font-size: 2.8rem; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .search-box { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- News Ticker -->
+    <div class="ticker-wrap">
+        <span class="ticker-title">Breaking News</span>
+        <div class="ticker" id="breaking-ticker">
+            <span class="ticker-item">AFE Coursework Projects released live on GitHub Pages!</span>
+            <span class="ticker-item">DeepSeek-R1 shakes up AI reasoning market with MIT licensing</span>
+            <span class="ticker-item">Responsive design is the new global baseline for web developments</span>
+            <span class="ticker-item">Interactive layouts with CSS grid and custom glassmorphism components</span>
+            <!-- duplicate for smooth loop -->
+            <span class="ticker-item">AFE Coursework Projects released live on GitHub Pages!</span>
+            <span class="ticker-item">DeepSeek-R1 shakes up AI reasoning market with MIT licensing</span>
+            <span class="ticker-item">Responsive design is the new global baseline for web developments</span>
+            <span class="ticker-item">Interactive layouts with CSS grid and custom glassmorphism components</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Site Header -->
+        <header>
+            <div class="header-top">
+                <div class="date-badge" id="current-date">Monday, June 29, 2026</div>
+                <button class="theme-toggle-btn" id="theme-toggle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    Toggle Theme
+                </button>
+            </div>
+            <h1 class="site-title">THE AFE CHRONICLE</h1>
+            <p class="tagline">"Accurate, Beautiful, Responsive Journalism for the Digital Age"</p>
+        </header>
+
+        <!-- API Key Manager Banner (Collapsible) -->
+        <div class="api-banner">
+            <div class="api-banner-header">
+                <span class="api-banner-title">NewsAPI.org Integration</span>
+                <span class="badge" style="background: rgba(194, 26, 9, 0.1); color: var(--accent-red); cursor: pointer;" id="api-status">Demo Mode</span>
+            </div>
+            <p class="api-banner-desc">By default, this site displays high-fidelity mock news articles. Paste your free API key from <strong>newsapi.org</strong> to connect to live headlines in real time (stored safely in local storage).</p>
+            <form class="api-form" id="api-key-form">
+                <input type="password" class="api-input" id="api-key-input" placeholder="Paste NewsAPI Key Here...">
+                <button type="submit" class="api-btn">Save Key</button>
+                <button type="button" class="api-btn" style="background: #475569;" id="clear-api-btn">Reset</button>
+            </form>
+        </div>
+
+        <!-- Toolbar (Category Filters + Search Box) -->
+        <div class="toolbar">
+            <div class="filters" id="category-filters">
+                <button class="filter-btn active" data-category="general">Top Headlines</button>
+                <button class="filter-btn" data-category="technology">Technology</button>
+                <button class="filter-btn" data-category="sports">Sports</button>
+                <button class="filter-btn" data-category="business">Business</button>
+                <button class="filter-btn" data-category="health">Health</button>
+            </div>
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="search-input" id="search-input" placeholder="Search news by keywords...">
+            </div>
+        </div>
+
+        <!-- News Card Grid -->
+        <main class="news-grid" id="news-grid">
+            <!-- Skeleton cards will render here dynamically -->
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="update-toast">News updated.</div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p><strong>The AFE Chronicle</strong> - Built with HTML5, CSS3 Variables, Fetch APIs, and Responsive Grid Layouts.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.8;"><a href="index.html">Back to master projects dashboard</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Mock fallback news database (displayed when API key is not present or invalid)
+        const mockNews = {
+            general: [
+                {
+                    title: "AFE Coursework Launches Master 3D Dashboard Navigation",
+                    description: "Ankita Baler has launched a premium developer landing dashboard showcasing 3D glassmorphic designs, portfolio integrations, and live endpoints.",
+                    source: { name: "Local Dev Report" },
+                    publishedAt: "2026-06-29T12:00:00Z",
+                    urlToImage: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=800",
+                    url: "index.html"
+                },
+                {
+                    title: "DeepSeek-R1 Shakes Up Open-Source Ecosystem",
+                    description: "DeepSeek releases their flagship 671B Mixture-of-Experts model DeepSeek-R1, proving RL reasoning can match proprietary models.",
+                    source: { name: "AI Frontier" },
+                    publishedAt: "2026-06-29T10:45:00Z",
+                    urlToImage: "https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&q=80&w=800",
+                    url: "huggingface.html"
+                },
+                {
+                    title: "Global Web Standards Require Adaptive Responsive Architectures",
+                    description: "CSS Grid and Flexible boxes dominate desktop and mobile platforms as performance budgets become tighter worldwide.",
+                    source: { name: "Tech Standards" },
+                    publishedAt: "2026-06-29T08:15:00Z",
+                    urlToImage: "https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&q=80&w=800",
+                    url: "portfolio.html"
+                }
+            ],
+            technology: [
+                {
+                    title: "Vite 7.0 Officially Released With Massive ESM Performance Improvements",
+                    description: "Developers celebrate as compilation times hit sub-millisecond ranges thanks to native ES modules and underlying Rust compilation cores.",
+                    source: { name: "WebDev Monthly" },
+                    publishedAt: "2026-06-29T11:30:00Z",
+                    urlToImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800",
+                    url: "#"
+                },
+                {
+                    title: "Glassmorphism Remains Design Trend of the Year",
+                    description: "A combination of backdrop-filters, subtle gradients, and glowing borders create stunning visually premium layers across interfaces.",
+                    source: { name: "UX Design Hub" },
+                    publishedAt: "2026-06-29T09:20:00Z",
+                    urlToImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800",
+                    url: "#"
+                }
+            ],
+            sports: [
+                {
+                    title: "Championship Finals Conclude in Dramatic Penalty Shootout",
+                    description: "Underdog team scores in the final seconds of extra time, forcing penalties and securing the continental championship cup.",
+                    source: { name: "Global Sports News" },
+                    publishedAt: "2026-06-29T10:10:00Z",
+                    urlToImage: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=800",
+                    url: "#"
+                }
+            ],
+            business: [
+                {
+                    title: "Global Tech Stocks Experience Recovery Amid Lower Interest Expectations",
+                    description: "Markets respond favorably to economic updates, driving a surge in semiconductor and green technology indices.",
+                    source: { name: "Financial Watch" },
+                    publishedAt: "2026-06-29T09:00:00Z",
+                    urlToImage: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&q=80&w=800",
+                    url: "#"
+                }
+            ],
+            health: [
+                {
+                    title: "AI Diagnoses Complex Medical Anomalies in Under Five Seconds",
+                    description: "A breakthrough clinical study showcases neural networks identifying minor scan fractures with a 99.4% precision rate.",
+                    source: { name: "Medical Science Today" },
+                    publishedAt: "2026-06-28T14:30:00Z",
+                    urlToImage: "https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?auto=format&fit=crop&q=80&w=800",
+                    url: "#"
+                }
+            ]
+        };
+
+        // DOM elements
+        const newsGrid = document.getElementById('news-grid');
+        const themeToggle = document.getElementById('theme-toggle');
+        const apiForm = document.getElementById('api-key-form');
+        const apiInput = document.getElementById('api-key-input');
+        const clearApiBtn = document.getElementById('clear-api-btn');
+        const apiStatus = document.getElementById('api-status');
+        const categoryFilters = document.getElementById('category-filters');
+        const searchInput = document.getElementById('search-input');
+        const dateElement = document.getElementById('current-date');
+        const toast = document.getElementById('update-toast');
+
+        let currentCategory = 'general';
+        let searchQuery = '';
+
+        // Set Date
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateElement.innerText = new Date().toLocaleDateString('en-US', options);
+
+        // Load theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Load API Key from localStorage
+        let apiKey = localStorage.getItem('news_api_key') || '';
+        if (apiKey) {
+            apiInput.value = '•'.repeat(24); // obfuscate
+            apiStatus.innerText = 'API Mode (Live)';
+            apiStatus.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+            apiStatus.style.color = '#10b981';
+        }
+
+        // Save API Key
+        apiForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const keyVal = apiInput.value.trim();
+            if (keyVal) {
+                localStorage.setItem('news_api_key', keyVal);
+                apiKey = keyVal;
+                showToast("API Key Saved! Loading live news...");
+                apiStatus.innerText = 'API Mode (Live)';
+                apiStatus.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                apiStatus.style.color = '#10b981';
+                fetchNews();
+            }
+        });
+
+        // Clear API Key
+        clearApiBtn.addEventListener('click', () => {
+            localStorage.removeItem('news_api_key');
+            apiKey = '';
+            apiInput.value = '';
+            showToast("API Reset. Running in demo mode.");
+            apiStatus.innerText = 'Demo Mode';
+            apiStatus.style.backgroundColor = 'rgba(194, 26, 9, 0.1)';
+            apiStatus.style.color = 'var(--accent-red)';
+            fetchNews();
+        });
+
+        // Show Toast
+        function showToast(message) {
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Helper to format date
+        function formatDate(dateString) {
+            const d = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - d;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 60) return `${diffMins}m ago`;
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours}h ago`;
+            
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Render Skeletons
+        function renderSkeletons() {
+            newsGrid.innerHTML = '';
+            for(let i=0; i<6; i++) {
+                newsGrid.innerHTML += `
+                    <div class="news-card">
+                        <div class="skeleton skeleton-image"></div>
+                        <div class="card-content">
+                            <div class="skeleton skeleton-meta"></div>
+                            <div class="skeleton skeleton-title"></div>
+                            <div class="skeleton skeleton-title" style="width: 70%"></div>
+                            <div class="skeleton skeleton-desc"></div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render Articles
+        function renderArticles(articles) {
+            newsGrid.innerHTML = '';
+            if (articles.length === 0) {
+                newsGrid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 4rem 1rem; border: 1px dashed var(--border-color); border-radius: 12px;">
+                        <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-title); margin-bottom: 0.5rem;">No Headlines Found</h3>
+                        <p>Try searching for a different keyword or resetting filters.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            articles.forEach(article => {
+                const img = article.urlToImage || "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=800";
+                const source = article.source?.name || "Unknown Source";
+                const date = formatDate(article.publishedAt);
+                
+                newsGrid.innerHTML += `
+                    <article class="news-card">
+                        <div class="card-image-wrap">
+                            <img class="card-image" src="${img}" alt="${article.title}" loading="lazy">
+                        </div>
+                        <div class="card-content">
+                            <div class="card-meta">
+                                <span class="card-source">${source}</span>
+                                <span>${date}</span>
+                            </div>
+                            <h3 class="card-title">${article.title}</h3>
+                            <p class="card-desc">${article.description || 'No description available for this breaking news item. Click read more to view details on the parent website.'}</p>
+                            <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="read-more-btn">Read Full Article</a>
+                        </div>
+                    </article>
+                `;
+            });
+        }
+
+        // Fetch News
+        async function fetchNews() {
+            renderSkeletons();
+            
+            if (!apiKey) {
+                // RUNNING MOCK MODE
+                setTimeout(() => {
+                    let articles = mockNews[currentCategory] || [];
+                    if (searchQuery) {
+                        articles = Object.values(mockNews).flat().filter(art => 
+                            art.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            (art.description && art.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                        );
+                    }
+                    renderArticles(articles);
+                }, 800); // simulate network lag
+                return;
+            }
+
+            // LIVE API MODE
+            try {
+                let url = '';
+                if (searchQuery) {
+                    url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&sortBy=publishedAt&apiKey=${apiKey}`;
+                } else {
+                    // NewsAPI categories are supported
+                    const catParam = currentCategory === 'general' ? 'general' : currentCategory;
+                    url = `https://newsapi.org/v2/top-headlines?country=us&category=${catParam}&apiKey=${apiKey}`;
+                }
+
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data.status === 'ok') {
+                    renderArticles(data.articles);
+                } else {
+                    console.error("API Error:", data.message);
+                    showToast("API Key Error: " + data.message);
+                    // fallback to mock on error
+                    renderArticles(mockNews[currentCategory] || []);
+                }
+            } catch(e) {
+                console.error("Network Error:", e);
+                showToast("Network failure. Using mock data.");
+                renderArticles(mockNews[currentCategory] || []);
+            }
+        }
+
+        // Category Filter Listener
+        categoryFilters.addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                currentCategory = e.target.dataset.category;
+                searchQuery = ''; // Reset search on category toggle
+                searchInput.value = '';
+                fetchNews();
+            }
+        });
+
+        // Search Input Listener (Debounced)
+        let searchDebounce;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => {
+                searchQuery = e.target.value.trim();
+                fetchNews();
+            }, 500);
+        });
+
+        // Auto refresh every 5 minutes
+        setInterval(() => {
+            fetchNews();
+            showToast("Refreshed live headlines automatically.");
+        }, 5 * 60 * 1000);
+
+        // Initial Load
+        fetchNews();
+    </script>
+</body>
+</html>
