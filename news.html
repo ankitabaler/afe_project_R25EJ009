@@ -492,10 +492,76 @@
         }
 
         /* Responsive design */
+        @media (max-width: 1024px) {
+            .news-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
-            h1.site-title { font-size: 2.8rem; }
-            .toolbar { flex-direction: column; align-items: stretch; }
-            .search-box { width: 100%; }
+            h1.site-title { font-size: 2.4rem; }
+            .tagline { font-size: 1rem; }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            .filters {
+                justify-content: flex-start;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 0.5rem;
+            }
+            .filter-btn {
+                flex-shrink: 0;
+                padding: 0.5rem 1rem;
+                font-size: 0.82rem;
+            }
+            .search-box {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .news-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .api-form {
+                flex-direction: column;
+            }
+            .api-btn {
+                width: 100%;
+            }
+
+            .card-image-wrap {
+                height: 180px;
+            }
+            .card-content {
+                padding: 1.2rem;
+            }
+            .card-title {
+                font-size: 1.15rem;
+            }
+
+            .ticker-title {
+                font-size: 0.7rem;
+                padding: 0.3rem 0.6rem;
+            }
+
+            header {
+                padding: 1.5rem 0 1rem 0;
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1.site-title { font-size: 2rem; }
+            .container { padding: 0 0.75rem; }
+            .header-top { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+            .card-image-wrap { height: 160px; }
         }
     </style>
 </head>
@@ -801,76 +867,131 @@
             });
         }
 
-        // Fetch News
+        // Update the ticker with live headlines
+        function updateTicker(articles) {
+            const ticker = document.getElementById('breaking-ticker');
+            if (!articles || articles.length === 0) return;
+            const top5 = articles.slice(0, 5);
+            let tickerHTML = '';
+            top5.forEach(a => {
+                tickerHTML += `<span class="ticker-item">${a.title}</span>`;
+            });
+            // duplicate for seamless loop
+            ticker.innerHTML = tickerHTML + tickerHTML;
+        }
+
+        // Fetch News — multi-API fallback chain
         async function fetchNews() {
             renderSkeletons();
             
-            if (!apiKey) {
-                // RUNNING LIVE FREE CORS MODE (ok.surf Google News Aggregator)
+            // ─── Path A: User supplied a NewsAPI key ─────────────────────
+            if (apiKey) {
                 try {
-                    const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
+                    let url = '';
+                    if (searchQuery) {
+                        url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&sortBy=publishedAt&apiKey=${apiKey}`;
+                    } else {
+                        const catParam = currentCategory === 'general' ? 'general' : currentCategory;
+                        url = `https://newsapi.org/v2/top-headlines?country=us&category=${catParam}&apiKey=${apiKey}`;
+                    }
+                    const res = await fetch(url);
                     const data = await res.json();
-                    
-                    // Map categories
-                    let categoryKey = 'US'; // default for general
+                    if (data.status === 'ok' && data.articles && data.articles.length > 0) {
+                        renderArticles(data.articles);
+                        updateTicker(data.articles);
+                        return;
+                    } else {
+                        showToast("NewsAPI error – trying backup source…");
+                    }
+                } catch(e) {
+                    showToast("NewsAPI unreachable – trying backup source…");
+                }
+            }
+
+            // ─── Path B: Free live feed from GNews (CORS friendly) ───────
+            try {
+                const categoryMap = {
+                    general: 'general',
+                    technology: 'technology',
+                    sports: 'sports',
+                    business: 'business',
+                    health: 'health'
+                };
+                const cat = categoryMap[currentCategory] || 'general';
+                let gnewsUrl = `https://gnews.io/api/v4/top-headlines?category=${cat}&lang=en&country=us&max=10&apikey=demo`;
+                if (searchQuery) {
+                    gnewsUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&max=10&apikey=demo`;
+                }
+                const res = await fetch(gnewsUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.articles && data.articles.length > 0) {
+                        // Normalize GNews fields to match our renderer
+                        const normalized = data.articles.map(a => ({
+                            title: a.title,
+                            description: a.description,
+                            urlToImage: a.image,
+                            url: a.url,
+                            source: { name: a.source?.name || 'GNews' },
+                            publishedAt: a.publishedAt
+                        }));
+                        renderArticles(normalized);
+                        updateTicker(normalized);
+                        apiStatus.innerText = 'Live (GNews)';
+                        apiStatus.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                        apiStatus.style.color = '#10b981';
+                        return;
+                    }
+                }
+            } catch(e) {
+                console.warn('GNews fallback failed:', e);
+            }
+
+            // ─── Path C: ok.surf Google News aggregator ──────────────────
+            try {
+                const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
+                if (res.ok) {
+                    const data = await res.json();
+                    let categoryKey = 'US';
                     if (currentCategory === 'technology') categoryKey = 'Technology';
                     else if (currentCategory === 'sports') categoryKey = 'Sports';
                     else if (currentCategory === 'business') categoryKey = 'Business';
                     else if (currentCategory === 'health') categoryKey = 'Health';
 
                     let articles = data[categoryKey] || [];
-                    
-                    // If search query is present, search across all categories locally
                     if (searchQuery) {
                         const allArticles = Object.values(data).flat();
-                        articles = allArticles.filter(art => 
-                            art.title.toLowerCase().includes(searchQuery.toLowerCase())
+                        articles = allArticles.filter(art =>
+                            art.title && art.title.toLowerCase().includes(searchQuery.toLowerCase())
                         );
                     }
-                    
-                    renderArticles(articles);
-                } catch(e) {
-                    console.error("ok.surf feed error, falling back to mock database:", e);
-                    // fallback to mock on error
-                    let articles = mockNews[currentCategory] || [];
-                    if (searchQuery) {
-                        articles = Object.values(mockNews).flat().filter(art => 
-                            art.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            (art.description && art.description.toLowerCase().includes(searchQuery.toLowerCase()))
-                        );
+                    if (articles.length > 0) {
+                        renderArticles(articles);
+                        updateTicker(articles);
+                        apiStatus.innerText = 'Live (Google News)';
+                        apiStatus.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                        apiStatus.style.color = '#10b981';
+                        return;
                     }
-                    renderArticles(articles);
-                }
-                return;
-            }
-
-            // LIVE API MODE
-            try {
-                let url = '';
-                if (searchQuery) {
-                    url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&sortBy=publishedAt&apiKey=${apiKey}`;
-                } else {
-                    // NewsAPI categories are supported
-                    const catParam = currentCategory === 'general' ? 'general' : currentCategory;
-                    url = `https://newsapi.org/v2/top-headlines?country=us&category=${catParam}&apiKey=${apiKey}`;
-                }
-
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                if (data.status === 'ok') {
-                    renderArticles(data.articles);
-                } else {
-                    console.error("API Error:", data.message);
-                    showToast("API Key Error: " + data.message);
-                    // fallback to mock on error
-                    renderArticles(mockNews[currentCategory] || []);
                 }
             } catch(e) {
-                console.error("Network Error:", e);
-                showToast("Network failure. Using mock data.");
-                renderArticles(mockNews[currentCategory] || []);
+                console.warn('ok.surf fallback failed:', e);
             }
+
+            // ─── Path D: Offline mock data ───────────────────────────────
+            let articles = mockNews[currentCategory] || [];
+            if (searchQuery) {
+                articles = Object.values(mockNews).flat().filter(art =>
+                    art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (art.description && art.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                );
+            }
+            renderArticles(articles);
+            updateTicker(articles);
+            apiStatus.innerText = 'Demo Mode';
+            apiStatus.style.backgroundColor = 'rgba(194, 26, 9, 0.1)';
+            apiStatus.style.color = 'var(--accent-red)';
+            showToast("Showing curated demo articles.");
         }
 
         // Category Filter Listener

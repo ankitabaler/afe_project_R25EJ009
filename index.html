@@ -192,8 +192,7 @@
             text-decoration: none;
             color: inherit;
             display: block;
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease;
+            /* No transform-style here - prevents layout feedback loops */
         }
 
         .glass-card-3d {
@@ -207,8 +206,8 @@
                 0 30px 60px rgba(0, 0, 0, 0.4),
                 0 1px 0 rgba(255,255,255,0.1) inset,
                 0 -1px 0 rgba(0,0,0,0.5) inset;
-            transition: var(--transition);
-            transform-style: preserve-3d;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+            will-change: transform;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -485,33 +484,43 @@
             layerCave.style.setProperty('--ty-cave', `${tyCave}px`);
         });
 
-        // 3D Card tilting logic (Smooth child transformation to prevent layout recalculation vibration)
+        // 3D Card tilting — cache rect on mouseenter, use rAF for smooth updates
         const cardContainers = document.querySelectorAll('.card-3d-link');
         
         cardContainers.forEach(container => {
             const card = container.querySelector('.glass-card-3d');
+            let cachedRect = null;
+            let rafId = null;
+
+            container.addEventListener('mouseenter', () => {
+                // Snapshot the container rect ONCE on entry — never during move
+                cachedRect = container.getBoundingClientRect();
+            });
 
             container.addEventListener('mousemove', (e) => {
-                const rect = container.getBoundingClientRect(); // Use static container boundaries
-                
-                // Get mouse position relative to container coordinates
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                // Set CSS variables for radial gradient shine effect
-                card.style.setProperty('--mx', `${x}px`);
-                card.style.setProperty('--my', `${y}px`);
+                if (!cachedRect) return;
+                if (rafId) cancelAnimationFrame(rafId);
 
-                // Normalize inputs to ranges [-10, 10] degrees
-                const rotateX = -10 * ((y - rect.height / 2) / (rect.height / 2));
-                const rotateY = 10 * ((x - rect.width / 2) / (rect.width / 2));
+                rafId = requestAnimationFrame(() => {
+                    const x = e.clientX - cachedRect.left;
+                    const y = e.clientY - cachedRect.top;
 
-                // Transform the child card, keeping the mousemove container bounds static
-                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(15px)`;
+                    // Shine highlight position
+                    card.style.setProperty('--mx', `${x}px`);
+                    card.style.setProperty('--my', `${y}px`);
+
+                    // Gentle tilt (max ±8 deg)
+                    const rotateX = -8 * ((y - cachedRect.height / 2) / (cachedRect.height / 2));
+                    const rotateY =  8 * ((x - cachedRect.width  / 2) / (cachedRect.width  / 2));
+
+                    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
+                });
             });
 
             container.addEventListener('mouseleave', () => {
-                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+                if (rafId) cancelAnimationFrame(rafId);
+                cachedRect = null;
+                card.style.transform = '';
             });
         });
     </script>
