@@ -181,7 +181,7 @@
         /* Interactive 3D Grid */
         .grid-3d {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 2.5rem;
             width: 100%;
             transform-style: preserve-3d;
@@ -314,7 +314,13 @@
         }
 
         /* Responsive Layouts */
-        @media (max-width: 968px) {
+        @media (max-width: 1100px) {
+            .grid-3d {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
             .grid-3d {
                 grid-template-columns: 1fr;
                 gap: 2rem;
@@ -405,6 +411,32 @@
                     <p class="card-desc">Review clean, structured directories, git commit logs, and deployment workflows directly on the GitHub source code repository.</p>
                     <div class="card-action" style="color: #ffffff;">
                         View GitHub Code
+                        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Project 5 (Coursework Prompt Specs) -->
+            <a href="prompt.html" class="card-3d-link">
+                <div class="glass-card-3d">
+                    <span class="project-tag tag-cyan">Coursework Specs</span>
+                    <h2 class="card-title">Prompt Reference</h2>
+                    <p class="card-desc">View the full original AFE coursework guidelines, build constraints, prompt details, and deployment requirements in a dedicated reader.</p>
+                    <div class="card-action" style="color: var(--color-cyan);">
+                        Read Prompt Specifications
+                        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Project 6 (GitHub Profile Settings Gateway) -->
+            <a href="https://github.com/ankitabaler" target="_blank" rel="noopener noreferrer" class="card-3d-link">
+                <div class="glass-card-3d">
+                    <span class="project-tag tag-violet">GitHub Gateway</span>
+                    <h2 class="card-title">Developer Profile</h2>
+                    <p class="card-desc">Navigate directly to the GitHub profile workspace to configure account settings, view repository lists, and manage organization parameters.</p>
+                    <div class="card-action" style="color: var(--color-violet);">
+                        Access GitHub Workspace
                         <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </div>
                 </div>
