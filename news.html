@@ -777,9 +777,10 @@
             }
 
             articles.forEach(article => {
-                const img = article.urlToImage || "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=800";
-                const source = article.source?.name || "Unknown Source";
-                const date = formatDate(article.publishedAt);
+                const img = article.urlToImage || article.og || "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=800";
+                const source = article.source?.name || article.source || "News Source";
+                const date = article.publishedAt ? formatDate(article.publishedAt) : "Recently";
+                const url = article.url || article.link || "#";
                 
                 newsGrid.innerHTML += `
                     <article class="news-card">
@@ -793,7 +794,7 @@
                             </div>
                             <h3 class="card-title">${article.title}</h3>
                             <p class="card-desc">${article.description || 'No description available for this breaking news item. Click read more to view details on the parent website.'}</p>
-                            <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="read-more-btn">Read Full Article</a>
+                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="read-more-btn">Read Full Article</a>
                         </div>
                     </article>
                 `;
@@ -805,8 +806,32 @@
             renderSkeletons();
             
             if (!apiKey) {
-                // RUNNING MOCK MODE
-                setTimeout(() => {
+                // RUNNING LIVE FREE CORS MODE (ok.surf Google News Aggregator)
+                try {
+                    const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
+                    const data = await res.json();
+                    
+                    // Map categories
+                    let categoryKey = 'US'; // default for general
+                    if (currentCategory === 'technology') categoryKey = 'Technology';
+                    else if (currentCategory === 'sports') categoryKey = 'Sports';
+                    else if (currentCategory === 'business') categoryKey = 'Business';
+                    else if (currentCategory === 'health') categoryKey = 'Health';
+
+                    let articles = data[categoryKey] || [];
+                    
+                    // If search query is present, search across all categories locally
+                    if (searchQuery) {
+                        const allArticles = Object.values(data).flat();
+                        articles = allArticles.filter(art => 
+                            art.title.toLowerCase().includes(searchQuery.toLowerCase())
+                        );
+                    }
+                    
+                    renderArticles(articles);
+                } catch(e) {
+                    console.error("ok.surf feed error, falling back to mock database:", e);
+                    // fallback to mock on error
                     let articles = mockNews[currentCategory] || [];
                     if (searchQuery) {
                         articles = Object.values(mockNews).flat().filter(art => 
@@ -815,7 +840,7 @@
                         );
                     }
                     renderArticles(articles);
-                }, 800); // simulate network lag
+                }
                 return;
             }
 
